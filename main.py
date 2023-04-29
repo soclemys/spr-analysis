@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.optimize import curve_fit
+from scipy.optimize import least_squares
 from scipy.stats import linregress
 import matplotlib.pyplot as plt
 import os
@@ -33,6 +33,10 @@ def smooth(df, window_size=500):
         ).mean()
     return df
 
+def residuals_func(p, time, data):
+    R_max, k_off = p
+    return data - exponential_decay(time, R_max, k_off)
+
 def calculate_residuals_and_chisq(observed, predicted):
     residuals = observed - predicted
     squared_residuals = residuals ** 2
@@ -47,6 +51,11 @@ def calculate_reduced_chisq(chisq, data_points, num_params):
 def langmuir_binding(t, R_max, k_obs):
     return R_max * (1 - np.exp(-k_obs * t))
 
+def langmuir_residuals(params, t, observed):
+    R_max, k_obs = params
+    predicted = langmuir_binding(t, R_max, k_obs)
+    return observed - predicted
+
 def exponential_decay(x, a, b):
     return a * np.exp(-b * x)
 
@@ -59,6 +68,11 @@ def r_squared_func(observed, expected):
 
 def hyperbolic_binding_equation(x, R_max, Kd):
     return R_max * x / (Kd + x)
+
+def residuals_func_hyperbolic(params, concentration, R_max_values):
+    R_max, Kd = params
+    return R_max_values - hyperbolic_binding_equation(concentration, R_max, Kd)
+
 
 # Load data
 df = pd.read_csv('data.tsv', delimiter='\t')
@@ -148,11 +162,15 @@ chi_square_values = []
 
 for i, column in enumerate(response_association.columns):
     R_max = max(response_association[column].values)
-    popt, pcov = curve_fit(langmuir_binding, time_association, response_association[column].values, p0=[R_max, 1.13e-02], maxfev=100000, method='dogbox')
-    R_max, k_obs = popt
+    initial_guess = [R_max, 1.13e-02]
+    result = least_squares(langmuir_residuals, initial_guess, args=(time_association, response_association[column].values))
+    R_max, k_obs = result.x
     R_max_values.append(R_max)
     k_obs_values.append(k_obs)
-    stderr = np.sqrt(np.diag(pcov))[0]
+    jacobian = result.jac
+    hessian = np.dot(jacobian.T, jacobian)
+    cov_matrix = np.linalg.inv(hessian)
+    stderr = np.sqrt(np.diag(cov_matrix))
     k_obs_stderr.append(stderr)
 
     # Calculate chi-square
@@ -300,12 +318,19 @@ time_dissociation = df_dissoc['time'].values - min(df_dissoc['time'].values)
 
 for i, column in enumerate(response_dissociation.columns):
     R_max = max(response_dissociation[column].values)
-    popt, pcov = curve_fit(exponential_decay, time_dissociation, response_dissociation[column].values, p0=[R_max, 0.0005], maxfev=100000)
-    R_max, k_off = popt
+    initial_guess = [R_max, 0.0005]
+
+    result = least_squares(residuals_func, initial_guess, args=(time_dissociation, response_dissociation[column].values), max_nfev=100000)
+    R_max, k_off = result.x
     R_max_values.append(R_max)
     predicted_k_off_values.append(k_off)
-    stderr = np.sqrt(np.diag(pcov))[1]
-    k_off_stderr.append(stderr)
+
+    # Calculate stderr
+    jacobian = result.jac
+    hessian = np.dot(jacobian.T, jacobian)
+    cov_matrix = np.linalg.inv(hessian)
+    stderr = np.sqrt(np.diag(cov_matrix))
+    k_off_stderr.append(stderr[1])
 
     # Calculate chi-square
     observed = response_dissociation[column].values
@@ -368,9 +393,15 @@ with open('output_data/dissociation_curve_fits/predicted_k_off.txt', 'w') as f:
     f.write(f'Standard Error of k_off: {stderr_k_off:.6e} 1/s\n')
 
 # Calculate and plot R_max vs Concentration
-popt, pcov = curve_fit(hyperbolic_binding_equation, concentration_values, R_max_values)
-R_max_opt, Kd_opt = popt
-stderr = np.sqrt(np.diag(pcov))
+initial_guess = [max(R_max_values), 1]
+result = least_squares(residuals_func_hyperbolic, initial_guess, args=(np.array(concentration_values), R_max_values))
+
+R_max_opt, Kd_opt = result.x
+jacobian = result.jac
+hessian = np.dot(jacobian.T, jacobian)
+cov_matrix = np.linalg.inv(hessian)
+stderr = np.sqrt(np.diag(cov_matrix))
+
 observed = R_max_values
 expected = hyperbolic_binding_equation(np.array(concentration_values), R_max_opt, Kd_opt)
 residuals = observed - expected

@@ -1,6 +1,6 @@
 # SPR Analysis
 
-Code for data analysis and curve fitting in a binding assay, including outlier interpolation, smoothing, and fitting of Langmuir and dissociation decay models. Calculates k_obs, k_on, k_off, R_max, and Kd, and exports results to files. Generates plots for visualization.
+This repository provides a Python implementation for analyzing and curve fitting Surface Plasmon Resonance (SPR) data in a binding assay. The code includes outlier interpolation, data smoothing, and fitting of Langmuir and dissociation decay models. It calculates k_obs, k_on, k_off, R_max, and Kd, and exports the results to files. Additionally, it generates plots for visualization.
 
 ## Installation
 
@@ -9,13 +9,13 @@ To run this project, you'll need to have Python installed on your system. The co
 1. Clone the repository to your local machine:
 
    ```
-   git clone https://github.com/your-username/your-repository.git
+   git clone https://github.com/soclemys/spr-analysis
    ```
 
 2. Navigate to the project directory:
 
    ```
-   cd your-repository
+   cd spr-analysis
    ```
 
 3. (Optional) It is recommended to create a virtual environment to keep the project dependencies isolated:
@@ -35,13 +35,15 @@ To run this project, you'll need to have Python installed on your system. The co
 
 ## Usage
 
-5. Once the installation is complete, you can run the project:
+1. Place your SPR data files in the root directory.
+
+3. Once the installation is complete, you can run the project:
 
    ```
    python main.py
    ```
 
-That's it! You should now have the project set up and ready to use.
+The analysis results, including calculated parameters and plots, will be saved in the `output_data` directory.
 
 ## License
 
