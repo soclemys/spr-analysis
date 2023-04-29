@@ -186,8 +186,8 @@ for i, column in enumerate(response_association.columns):
     with open(f'output_data/langmuir_curve_fits/k_obs_{concentration_values[i]}_nM.txt', 'w') as f:
         f.write('Langmuir binding model: R(t) = R_max * (1 - exp(-k_obs * t))\n')
         f.write('Units: R(t) (Response Units), R_max (Response Units), k_obs (1/s), t (s)\n\n')
-        f.write(f'k_obs: {k_obs}, R_max: {R_max}\n')
-        f.write(f'Standard deviation (sqrt of diagonal elements of the covariance matrix): {stderr}\n')
+        f.write(f'R_max: {R_max}, k_obs: {k_obs}\n')
+        f.write(f'Standard deviation (sqrt of diagonal elements of the covariance matrix):\nRmax: {stderr[0]}, k_obs:{stderr[1]}\n')
         f.write(f'Chi-square: {chi_square} Reduced Chi-square: {reduced_chi_square}')
         f.write(f'R-squared: {r_squared}')
 
@@ -346,7 +346,7 @@ for i, column in enumerate(response_dissociation.columns):
         output_file.write(f'Concentration: {concentration_values[i]} nM\n')
         output_file.write(f'R_max: {R_max}\n')
         output_file.write(f'k_off: {k_off}\n')
-        output_file.write(f'Standard error: {stderr}\n')
+        output_file.write(f'Standard error:\nR_max: {stderr[0]}, k_off: {stderr[1]}\n')
         output_file.write(f'Chi-square: {chi_square}\n')
         output_file.write(f'Reduced chi-square: {reduced_chi_square}\n')
         output_file.write(f'R-squared: {r_squared}\n')
@@ -427,9 +427,9 @@ with open('output_data/R_max_vs_concentration/R_max_fit_results.txt', 'w') as f:
     for i, concentration in enumerate(concentration_values):
         f.write(f'{concentration}\t{R_max_values[i]}\t{expected[i]}\n')
     f.write('\n')
-    f.write(f'R_max_opt: {R_max_opt}\n')
-    f.write(f'Kd_opt: {Kd_opt}\n')
-    f.write(f'Standard Error: {stderr[1]}\n')
+    f.write(f'R_max: {R_max_opt}\n')
+    f.write(f'Kd: {Kd_opt}\n')
+    f.write(f'Standard Error:\n R_max: {stderr[0]}, Kd: {stderr[1]}\n')
     f.write(f'Chi-square: {chi_square}\n')
     f.write(f'Reduced Chi-square: {reduced_chi_square}\n')
     f.write(f'R-squared: {r_squared}\n')
